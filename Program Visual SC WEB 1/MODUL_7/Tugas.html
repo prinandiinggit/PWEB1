@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lowongan Kerja</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+  <div class="container mt-5">
+    <h2 class="text-center mb-4">Lowongan Kerja</h2>
+
+    <!-- Form untuk menambahkan atau memperbarui data -->
+    <form id="jobForm">
+      <div class="form-group">
+        <label for="id">Id:</label>
+        <input type="text" class="form-control" id="id" name="id" required>
+      </div>
+      <div class="form-group">
+        <label for="nama">Nama Perusahaan:</label>
+        <input type="text" class="form-control" id="nama" name="nama" required>
+      </div>
+      <div class="form-group">
+        <label for="lokasi">Lokasi:</label>
+        <input type="text" class="form-control" id="lokasi" name="lokasi" required>
+      </div>
+      <div class="form-group">
+        <label for="tanggal">Tanggal Posting:</label>
+        <input type="date" class="form-control" id="tanggal" name="tanggal" required>
+      </div>
+      <button type="submit" class="btn btn-primary">Add/Update Data</button>
+    </form>
+
+    <!-- Form untuk mencari data -->
+    <div class="mt-4">
+      <h4>Cari Lowongan Kerja</h4>
+      <input type="text" id="searchQuery" class="form-control" placeholder="Masukkan kata kunci">
+      <button id="searchButton" class="btn btn-info mt-2">Search</button>
+    </div>
+
+    <!-- Tabel untuk menampilkan data -->
+    <div class="mt-4">
+      <h4>Data Lowongan Kerja</h4>
+      <table class="table table-bordered" id="jobTable">
+        <thead>
+          <tr>
+            <th>Id</th>
+            <th>Nama Perusahaan</th>
+            <th>Lokasi</th>
+            <th>Tanggal</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Data akan diisi secara dinamis -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Tambah validasi saat input data form -->
+<script>
+    const API_URL = 'https://script.google.com/macros/s/AKfycbxYZCfJ0tRJuHdxpRnXe-Ld7Cn6D1jrF44SgLWIcODp3lQgTjoE_8fNh1Xsb7mDfL3c/exec';
+    // Fungsi untuk membaca data dari API
+    function fetchData() {
+      $.get(`${API_URL}?action=read`, function(response) {
+        const tbody = $('#jobTable tbody');
+        tbody.empty(); 
+        response.forEach(item => {
+          tbody.append(`
+            <tr>
+              <td>${item.id || 'N/A'}</td>
+              <td>${item.nama || 'N/A'}</td>
+              <td>${item.lokasi || 'N/A'}</td>
+              <td>${item.tanggal || 'N/A'}</td>
+              <td>
+                <button class="btn btn-sm btn-warning" onclick="editData('${item.id}', '${item.nama}', '${item.lokasi}', '${item.tanggal}')">Edit</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteData('${item.id}')">Delete</button>
+              </td>
+            </tr>
+          `);
+        });
+      }).fail(function() {
+        alert('Gagal mengambil data!');
+      });
+    }
+  
+    // Fungsi untuk menambahkan atau memperbarui data
+    $('#jobForm').on('submit', function(e) {
+      e.preventDefault();
+      const formData = $(this).serialize();
+      const action = $('#id').val() ? 'update' : 'insert';
+  
+      if (!$('#id').val() || !$('#nama').val() || !$('#lokasi').val() || !$('#tanggal').val()) {
+        alert("Tolong lengkapi semua field!");
+        return;
+      }
+  
+      $.ajax({
+        url: `${API_URL}?action=${action}&${formData}`,
+        type: 'GET',
+        success: function(response) {
+          alert(response.result);
+          fetchData();
+        },
+        error: function() {
+          alert('Terjadi kesalahan saat mengirim data');
+        }
+      });
+    });
+  
+    // Fungsi untuk mencari data
+    $('#searchButton').on('click', function() {
+      const query = $('#searchQuery').val();
+  
+      if (!query) {
+        alert('Masukkan kata kunci untuk pencarian!');
+        return;
+      }
+  
+      $.get(`${API_URL}?action=search&query=${query}`, function(response) {
+        const tbody = $('#jobTable tbody');
+        tbody.empty(); 
+        response.forEach(item => {
+          tbody.append(`
+            <tr>
+              <td>${item.id || 'N/A'}</td>
+              <td>${item.nama || 'N/A'}</td>
+              <td>${item.lokasi || 'N/A'}</td>
+              <td>${item.tanggal || 'N/A'}</td>
+              <td>
+                <button class="btn btn-sm btn-warning" onclick="editData('${item.id}', '${item.nama}', '${item.lokasi}', '${item.tanggal}')">Edit</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteData('${item.id}')">Delete</button>
+              </td>
+            </tr>
+          `);
+        });
+      }).fail(function() {
+        alert('Gagal mencari data!');
+      });
+    });
+  
+    // Fungsi untuk menghapus data
+    function deleteData(id) {
+      if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
+        $.get(`${API_URL}?action=delete&id=${id}`, function(response) {
+          alert(response);
+          fetchData();
+        }).fail(function() {
+          alert('Gagal menghapus data!');
+        });
+      }
+    }
+  
+    // Fungsi untuk mengisi form saat mengedit data
+    function editData(id, nama, lokasi, tanggal) {
+      $('#id').val(id);
+      $('#nama').val(nama);
+      $('#lokasi').val(lokasi);
+      $('#tanggal').val(tanggal);
+    }
+  
+    // Panggil fetchData saat halaman dimuat
+    $(document).ready(function() {
+      fetchData();
+    });
+  </script>  
+</body>
+</html>
